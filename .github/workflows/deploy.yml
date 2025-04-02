@@ -1,0 +1,46 @@
+name: Deploy Frontend & Backend to Azure
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      BACKEND_IMAGE: backend:latest
+      FRONTEND_IMAGE: frontend:latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    # ─── BACKEND ─────────────────────────────────────
+    - name: Build Backend Docker image
+      run: docker build -t $BACKEND_IMAGE ./backend
+
+    - name: Push Backend to Azure
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: securitymap-backend
+        publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_URL }}
+        images: ${{ env.BACKEND_IMAGE }}
+        username: ${{ secrets.AZURE_BACKEND_USERNAME }}
+        password: ${{ secrets.AZURE_BACKEND_PASSWORD }}
+
+    # ─── FRONTEND ─────────────────────────────────────
+    - name: Build Frontend Docker image
+      run: docker build -t $FRONTEND_IMAGE ./frontend
+
+    - name: Push Frontend to Azure
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: securitymap-frontend
+        publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_URL }}
+        images: ${{ env.FRONTEND_IMAGE }}
+        username: ${{ secrets.AZURE_FRONTEND_USERNAME }}
+        password: ${{ secrets.AZURE_FRONTEND_PASSWORD }}
